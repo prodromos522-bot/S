@@ -35,4 +35,5 @@ use the editor.
 
 - Catalogue lives in `src/lib/products.ts`; cart/wishlist in `src/lib/cart.tsx` (localStorage) — no backend yet, so keep shop data static until Cloud is enabled.
 - Money rules (shipping, fees, totals) only in `src/lib/pricing.ts`, covered by `pricing.test.ts` — keep UI from recomputing totals.
-- Orders are saved in the visitor's browser only (`src/lib/orders.ts`); real payment capture is not wired yet.
+- Orders are saved in the visitor's browser only (`src/lib/orders.ts`); there is still no backend order storage.
+- PayPal checkout (`src/lib/paypal.server.ts`, `src/lib/paypal.functions.ts`, `src/components/shop/PaypalButton.tsx`) talks directly to PayPal's own REST API with `PAYPAL_CLIENT_ID`/`PAYPAL_CLIENT_SECRET` (see `.env.example`) — not through the Lovable connector gateway, so it keeps working on any host.
