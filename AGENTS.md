@@ -33,7 +33,7 @@ use the editor.
 
 ## Project rules
 
-- Catalogue lives in `src/lib/products.ts`; cart/wishlist in `src/lib/cart.tsx` (localStorage) — no backend yet, so keep shop data static until Cloud is enabled.
-- Money rules (shipping, fees, totals) only in `src/lib/pricing.ts`, covered by `pricing.test.ts` — keep UI from recomputing totals.
-- Orders are saved in the visitor's browser only (`src/lib/orders.ts`); there is still no backend order storage.
-- PayPal checkout (`src/lib/paypal.server.ts`, `src/lib/paypal.functions.ts`, `src/components/shop/PaypalButton.tsx`) talks directly to PayPal's own REST API with `PAYPAL_CLIENT_ID`/`PAYPAL_CLIENT_SECRET` (see `.env.example`) — not through the Lovable connector gateway, so it keeps working on any host.
+- Catalogue lives in `src/lib/products.ts`; cart/wishlist in `src/lib/cart.tsx` (localStorage) — keep shop data static, no DB needed for the catalogue itself.
+- Money rules (shipping, fees, totals) only in `src/lib/pricing.ts`, covered by `pricing.test.ts` — keep UI from recomputing totals. Every server-side money path (PayPal order creation, Supabase order persistence) recomputes prices from the catalogue itself — never trusts a price sent by the browser.
+- Real payment capture is wired through PayPal's REST API directly (`src/lib/paypal.server.ts`), independent of Lovable's connector gateway — works on any host once `PAYPAL_CLIENT_ID`/`PAYPAL_CLIENT_SECRET`/`VITE_PAYPAL_CLIENT_ID` are set.
+- Orders are saved in the visitor's browser (`src/lib/orders.ts`, for the confirmation screen and "my orders" page) **and** centrally in Supabase (`src/lib/orders.functions.ts` → `saveOrderServer`), so they survive beyond that one browser. The Supabase write is server-only (service-role key, never exposed to the browser) and non-blocking: if Supabase isn't configured yet, or the write fails, the customer-facing flow still completes and the failure is only logged. See `supabase/schema.sql` for the table (RLS enabled, no policies — only the server's service-role key can read/write it) and `.env` for the two variables (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`) needed to turn it on.

@@ -7,6 +7,7 @@ import { PaymentLogo } from "@/components/shop/PaymentLogos";
 import { PaypalButton } from "@/components/shop/PaypalButton";
 import { useCart } from "@/lib/cart";
 import { newOrderNumber, saveOrder, type Order } from "@/lib/orders";
+import { saveOrderServer } from "@/lib/orders.functions";
 import { paymentOptions } from "@/lib/payments";
 import { computeTotals, formatPrice, type PaymentMethod } from "@/lib/pricing";
 import { cn } from "@/lib/utils";
@@ -70,6 +71,26 @@ function CheckoutPage() {
     setDone({ number, email: order.email, total: order.total });
     clear();
     window.scrollTo({ top: 0 });
+
+    // Persist centrally too (Supabase), so the order isn't only in this
+    // visitor's own browser. The payment itself is already done by this
+    // point (captured by PayPal, or "pay on delivery/at the bank" for the
+    // other methods), so a failure here must not block the confirmation
+    // screen — it's logged for us to notice, not shown to the customer.
+    saveOrderServer({
+      data: {
+        number: order.number,
+        name: order.name,
+        email: order.email,
+        phone: String(f.get("phone")),
+        address: order.address,
+        payment: order.payment,
+        items: items.map((i) => ({ id: i.product.id, qty: i.qty })),
+        ...(captureId ? { paypalCaptureId: captureId } : {}),
+      },
+    }).catch((err: unknown) => {
+      console.error("Order", order.number, "was not saved to the backend:", err);
+    });
   }
 
   if (done) {
